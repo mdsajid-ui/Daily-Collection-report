@@ -1399,11 +1399,9 @@ function computeKpis() {
   const currentMonth = toMonthStr(latestDate);
   const prevMonthDate = new Date(latestDate.getFullYear(), latestDate.getMonth(), 0); // last day of prev month
   const prevMonth = toMonthStr(prevMonthDate);
-  // Uses `full` (not the date-range-filtered `f`) so this always reflects the
-  // whole current month to date, regardless of what's picked in the Start/End
-  // date filters above.
-  const monthTotal = full.filter((r) => toMonthStr(r.payment_date) === currentMonth).reduce((a, r) => a + r.amount, 0);
-  const prevMonthTotal = full.filter((r) => toMonthStr(r.payment_date) === prevMonth).reduce((a, r) => a + r.amount, 0);
+  // Use filtered data to respect date range filters
+  const monthTotal = f.filter((r) => toMonthStr(r.payment_date) === currentMonth).reduce((a, r) => a + r.amount, 0);
+  const prevMonthTotal = f.filter((r) => toMonthStr(r.payment_date) === prevMonth).reduce((a, r) => a + r.amount, 0);
   const growthPct = prevMonthTotal ? ((monthTotal - prevMonthTotal) / prevMonthTotal) * 100 : 0;
   const dayGrowthPct = yestAmt ? ((todayAmt - yestAmt) / yestAmt) * 100 : 0;
 
