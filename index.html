@@ -1199,7 +1199,7 @@ function parseWorkbookArrayBuffer(arrayBuffer) {
     }
 
     // amount + date must be present and valid
-    let amount = typeof rec.amount === "number" ? rec.amount : parseFloat(rec.amount);
+    let amount = typeof rec.amount === "number" ? rec.amount : parseFloat(String(rec.amount).replace(/,/g, ""));
     let dateVal = rec.payment_date;
     let dateObj = null;
     if (dateVal instanceof Date && !isNaN(dateVal)) {
@@ -1222,7 +1222,7 @@ function parseWorkbookArrayBuffer(arrayBuffer) {
       counselor: String(rec.counselor ?? "").trim(),
       payment_mode: String(rec.payment_mode ?? "").trim(),
       amount: amount,
-      payment_date: new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()),
+      payment_date: dateObj,
     });
   }
 
