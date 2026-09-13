@@ -2265,42 +2265,114 @@ function bindUI() {
     emailModal.classList.add("hidden");
   });
 
+  
+  function downloadBlobFile(blob, filename) {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.style.display = "none";
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }, 2500);
+  }
+
+  function base64ToBlob(base64, mimeType) {
+    const byteChars = atob(base64);
+    const byteNumbers = new Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) {
+      byteNumbers[i] = byteChars.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: mimeType });
+  }
+
   async function captureDashboardImage() {
-    const target = document.getElementById("mainContent") || document.body;
     if (typeof html2canvas === "undefined") {
       alert("Screenshot engine loading, please try again in a moment.");
-      return;
+      return false;
     }
-    const canvas = await html2canvas(target, {
-      backgroundColor: getComputedStyle(document.body).backgroundColor,
-      scale: 1.5,
-      useCORS: true
-    });
-    const a = document.createElement("a");
-    a.href = canvas.toDataURL("image/png");
-    a.download = "Daily_Collection_report_13th_Sep_2026.png";
-    a.click();
+    try {
+      const modal = document.getElementById("emailDirectorModal");
+      const wasModalOpen = modal && !modal.classList.contains("hidden");
+      if (wasModalOpen) modal.classList.add("hidden");
+
+      const target = document.querySelector(".app-shell") || document.body;
+      
+      const canvas = await html2canvas(target, {
+        backgroundColor: "#090c16",
+        scale: 1.5,
+        useCORS: true,
+        logging: false,
+        ignoreElements: (el) => {
+          return el.id === "uploadModal" || 
+                 el.id === "emailDirectorModal" || 
+                 el.id === "loadingOverlay" ||
+                 el.id === "tableSection" ||
+                 (el.classList && el.classList.contains("modal-overlay"));
+        }
+      });
+
+      if (wasModalOpen) modal.classList.remove("hidden");
+
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            downloadBlobFile(blob, "Daily_Collection_report_13th_Sep_2026.png");
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        }, "image/png");
+      });
+    } catch (err) {
+      console.error("Snapshot error:", err);
+      return false;
+    }
   }
 
   function downloadCollectionExcel() {
-    if (typeof XLSX === "undefined") {
-      alert("Excel export engine not loaded.");
-      return;
+    // If no custom filters active, download the genuine full authentic Excel file
+    const isUnfiltered = (state.filterBranch === "all" && state.filterCourse === "all" && 
+                          state.filterCounselor === "all" && state.filterPaymentMode === "all" && 
+                          (!state.search || state.search.trim() === ""));
+    if (isUnfiltered && window.ORIGINAL_EXCEL_B64) {
+      const blob = base64ToBlob(window.ORIGINAL_EXCEL_B64, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      downloadBlobFile(blob, "DAILY COLLECTION 060222023 DV ANALYTICS (1) (2).xlsx");
+      return true;
     }
-    const f = applyFilters(state.data).slice().sort((a, b) => b.payment_date - a.payment_date);
-    const rows = f.map((r) => ({
-      "Payment Date": toISODate(r.payment_date),
-      "Student Name": r.student,
-      "Course": r.course,
-      "Counselor": r.counselor,
-      "Branch": r.branch,
-      "Payment Mode": r.payment_mode,
-      "Amount (INR)": r.amount
-    }));
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Daily Collection");
-    XLSX.writeFile(wb, "DAILY COLLECTION 060222023 DV ANALYTICS (1) (2).xlsx");
+    
+    if (typeof XLSX !== "undefined") {
+      const f = applyFilters(state.data).slice().sort((a, b) => b.payment_date - a.payment_date);
+      const rows = f.map((r) => ({
+        "Payment Date": toISODate(r.payment_date),
+        "Student Name": r.student,
+        "Course": r.course,
+        "Counselor": r.counselor,
+        "Branch": r.branch,
+        "Payment Mode": r.payment_mode,
+        "Amount (INR)": r.amount
+      }));
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Daily Collection");
+      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      downloadBlobFile(blob, "DAILY COLLECTION 060222023 DV ANALYTICS (1) (2).xlsx");
+      return true;
+    }
+    
+    if (window.ORIGINAL_EXCEL_B64) {
+      const blob = base64ToBlob(window.ORIGINAL_EXCEL_B64, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      downloadBlobFile(blob, "DAILY COLLECTION 060222023 DV ANALYTICS (1) (2).xlsx");
+      return true;
+    }
+    
+    alert("Excel export engine not loaded.");
+    return false;
   }
 
   document.getElementById("directDownloadExcelBtn")?.addEventListener("click", () => {
@@ -2324,21 +2396,32 @@ function bindUI() {
   document.getElementById("execPackageAndSendBtn")?.addEventListener("click", async () => {
     const btn = document.getElementById("execPackageAndSendBtn");
     const orig = btn.innerHTML;
-    btn.innerHTML = "⏳ Preparing Attachments...";
+    btn.innerHTML = "⏳ Saving Attachments...";
     
+    // 1. Download Excel Workbook
     downloadCollectionExcel();
+    
+    // 2. Download Dashboard Snapshot PNG
     await captureDashboardImage();
     
     btn.innerHTML = "✅ Attachments Saved! Opening Mail...";
-    setTimeout(() => btn.innerHTML = orig, 3000);
 
     const recipient = document.getElementById("directorEmailRecipient").value || "skabdulsajid8144@gmail.com";
     const subject = document.getElementById("directorEmailSubject").value || "Daily Collection report of 13th Sep 2026";
     const body = document.getElementById("directorEmailBody").value;
-    
-    window.location.href = `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  });
+    const mailtoUrl = `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
+    // Wait 800ms so the browser writes both download blobs safely to disk before opening mail client
+    setTimeout(() => {
+      const a = document.createElement("a");
+      a.href = mailtoUrl;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => document.body.removeChild(a), 500);
+      btn.innerHTML = "✅ Mail Launched & Attachments Saved!";
+      setTimeout(() => btn.innerHTML = orig, 4000);
+    }, 800);
+  });
 
   document.getElementById("exportPdfBtn").addEventListener("click", async () => {
     exportDropdown.classList.add("hidden");
