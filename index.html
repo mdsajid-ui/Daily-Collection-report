@@ -1168,7 +1168,7 @@ const state = {
   page: 1,
   pageSize: 25,
   charts: {},
-  fileName: "BATCH_202601_TO_BATCH_202607__Nilam_.xlsx (Jan–Jul 2026, 879 rows)",
+  fileName: "DV_Analytics_Daily_Collection_Master.xlsx",
 };
 
 const CHART_COLORS = {
@@ -1421,8 +1421,7 @@ function activeFilterSummary() {
 function updateActiveFilterBanner() {
   const parts = activeFilterSummary();
   if (parts.length) {
-    document.getElementById("drillText").textContent = "Filters active — " + parts.join("  ·  ") +
-      "  (Total Collection reflects these filters; This Month's Collection does not)";
+    document.getElementById("drillText").textContent = "Filters active: " + parts.join("  ·  ");
     document.getElementById("drillBanner").classList.remove("hidden");
   } else {
     clearDrillBanner();
