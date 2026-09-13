@@ -691,10 +691,16 @@ body {
   font-size: 12.5px;
   outline: none;
   min-width: 130px;
+  color-scheme: dark;
+}
+.filter-group select option, select option {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  padding: 8px 10px;
 }
 .filter-group select:focus, .filter-group input:focus { border-color: var(--accent-cyan); }
 .date-range { display: flex; align-items: center; gap: 6px; color: var(--text-muted); }
-.date-range input { min-width: 128px; }
+.date-range input { min-width: 128px; color-scheme: dark; }
 
 .ghost-btn {
   padding: 9px 14px;
