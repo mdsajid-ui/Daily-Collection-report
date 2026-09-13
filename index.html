@@ -1426,17 +1426,22 @@ td.amount { font-family: var(--font-mono); color: var(--text-primary); font-weig
 
       <div>
         <label style="font-size: 11px; text-transform: uppercase; color: #aab4d4; font-weight: 600; display: block; margin-bottom: 4px;">Subject</label>
-        <input type="text" id="directorEmailSubject" value="Daily Collection Report - DV Analytics" style="width: 100%; padding: 8px 12px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #FFF; font-size: 13px;" />
+        <input type="text" id="directorEmailSubject" value="Daily Collection report of 13th Sep 2026" style="width: 100%; padding: 8px 12px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #FFF; font-size: 13px;" />
       </div>
 
       <div>
         <label style="font-size: 11px; text-transform: uppercase; color: #aab4d4; font-weight: 600; display: block; margin-bottom: 4px;">Email Body Message</label>
-        <textarea id="directorEmailBody" style="width: 100%; height: 90px; padding: 8px 12px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #FFF; font-size: 13px; resize: vertical;" readonly>Dear Sir,
+        <textarea id="directorEmailBody" style="width: 100%; height: 160px; padding: 8px 12px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #FFF; font-size: 12.5px; line-height: 1.5; resize: vertical;" readonly>Dear
 
-Please find attached the Daily Collection Report for your reference.
+I've attached the file containing the daily collection.
 
-Best regards,
-DV Analytics Team</textarea>
+--
+With Best Regards
+Md. Sajid l Data Analyst – Finance l DV Analytics
+Bangalore l Bhubaneswar l Website: Dvanalyticsmds.com
+M: +91 8431424165 l Email : md.sajid@dvanalyticsmds.com
+Linkedin: Sk abdul Sajid
+Facebook | Twitter | Instagram | LinkedIn | Youtube</textarea>
       </div>
 
       <!-- Attachments info box -->
@@ -1445,11 +1450,11 @@ DV Analytics Team</textarea>
           📎 Email Attachments Included:
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button id="directDownloadExcelBtn" class="ghost-btn" style="flex: 1; font-size: 11.5px; border-color: rgba(74,222,154,0.4); color: #4ade9a;">
-            📊 1. Download Excel Report (.xlsx)
+          <button id="directDownloadExcelBtn" class="ghost-btn" style="flex: 1; font-size: 11px; border-color: rgba(74,222,154,0.4); color: #4ade9a;">
+            📊 1. DAILY COLLECTION 060222023 DV ANALYTICS.xlsx
           </button>
-          <button id="directDownloadSnapshotBtn" class="ghost-btn" style="flex: 1; font-size: 11.5px; border-color: rgba(143,125,251,0.4); color: #8f7dfb;">
-            📸 2. Capture Dashboard Snapshot (.png)
+          <button id="directDownloadSnapshotBtn" class="ghost-btn" style="flex: 1; font-size: 11px; border-color: rgba(143,125,251,0.4); color: #8f7dfb;">
+            📸 2. Dashboard Image Snapshot (.png)
           </button>
         </div>
       </div>
@@ -2278,9 +2283,8 @@ function bindUI() {
       useCORS: true
     });
     const a = document.createElement("a");
-    const dStr = new Date().toISOString().slice(0, 10);
     a.href = canvas.toDataURL("image/png");
-    a.download = `Daily_Collection_Dashboard_Snapshot_${dStr}.png`;
+    a.download = "Daily_Collection_report_13th_Sep_2026.png";
     a.click();
   }
 
@@ -2301,9 +2305,8 @@ function bindUI() {
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Daily Collections");
-    const dStr = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(wb, `Daily_Collection_Report_${dStr}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, "Daily Collection");
+    XLSX.writeFile(wb, "DAILY COLLECTION 060222023 DV ANALYTICS (1) (2).xlsx");
   }
 
   document.getElementById("directDownloadExcelBtn")?.addEventListener("click", () => {
@@ -2335,9 +2338,9 @@ function bindUI() {
     btn.innerHTML = "✅ Attachments Saved! Opening Mail...";
     setTimeout(() => btn.innerHTML = orig, 3000);
 
-    const recipient = document.getElementById("directorEmailRecipient").value || "director@dvanalyticsbhopal.com";
-    const subject = document.getElementById("directorEmailSubject").value || "Daily Collection Report - DV Analytics";
-    const body = document.getElementById("directorEmailBody").value || "Dear Sir,\n\nPlease find attached the Daily Collection Report for your reference.\n\nBest regards,\nDV Analytics Team";
+    const recipient = document.getElementById("directorEmailRecipient").value || "skabdulsajid8144@gmail.com";
+    const subject = document.getElementById("directorEmailSubject").value || "Daily Collection report of 13th Sep 2026";
+    const body = document.getElementById("directorEmailBody").value;
     
     window.location.href = `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   });
