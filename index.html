@@ -1171,6 +1171,8 @@ td.amount { font-family: var(--font-mono); color: var(--text-primary); font-weig
 }
 
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -2205,15 +2207,7 @@ function bindUI() {
 
   document.getElementById("exportExcelBtn").addEventListener("click", () => {
     exportDropdown.classList.add("hidden");
-    const f = applyFilters(state.data).slice().sort((a, b) => b.payment_date - a.payment_date);
-    const rows = f.map((r) => ({
-      Student: r.student, Course: r.course, Branch: r.branch, Counselor: r.counselor,
-      "Payment Date": toISODate(r.payment_date), Amount: r.amount, "Payment Mode": r.payment_mode,
-    }));
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Collection Data");
-    XLSX.writeFile(wb, `collection_export_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    downloadCollectionExcel();
   });
 
   document.getElementById("printBtn").addEventListener("click", () => { window.print(); exportDropdown.classList.add("hidden"); });
