@@ -1446,11 +1446,14 @@ function computeKpis() {
   const f = applyFilters(full);
   if (!full.length) return null;
 
-  const latestDate = new Date(Math.max(...full.map((r) => r.payment_date)));
-  const yesterday = new Date(latestDate); yesterday.setDate(yesterday.getDate() - 1);
+  const uniqueDates = [...new Set(full.map((r) => +r.payment_date))].sort((a, b) => a - b);
+  const latestTs = uniqueDates[uniqueDates.length - 1];
+  const latestDate = new Date(latestTs);
+  const prevActiveTs = uniqueDates.length > 1 ? uniqueDates[uniqueDates.length - 2] : null;
+  const prevActiveDate = prevActiveTs ? new Date(prevActiveTs) : null;
 
-  const todayAmt = f.filter((r) => +r.payment_date === +latestDate).reduce((a, r) => a + r.amount, 0);
-  const yestAmt = f.filter((r) => +r.payment_date === +yesterday).reduce((a, r) => a + r.amount, 0);
+  const todayAmt = full.filter((r) => +r.payment_date === latestTs).reduce((a, r) => a + r.amount, 0);
+  const yestAmt = prevActiveTs ? full.filter((r) => +r.payment_date === prevActiveTs).reduce((a, r) => a + r.amount, 0) : 0;
 
   const dailyMap = groupSum(f, (r) => toISODate(r.payment_date));
   const dailyEntries = [...dailyMap.entries()];
@@ -1467,14 +1470,15 @@ function computeKpis() {
   const currentMonth = toMonthStr(latestDate);
   const prevMonthDate = new Date(latestDate.getFullYear(), latestDate.getMonth(), 0); // last day of prev month
   const prevMonth = toMonthStr(prevMonthDate);
-  // Use filtered data to respect date range filters
-  const monthTotal = f.filter((r) => toMonthStr(r.payment_date) === currentMonth).reduce((a, r) => a + r.amount, 0);
-  const prevMonthTotal = f.filter((r) => toMonthStr(r.payment_date) === prevMonth).reduce((a, r) => a + r.amount, 0);
+  
+  const monthTotal = full.filter((r) => toMonthStr(r.payment_date) === currentMonth).reduce((a, r) => a + r.amount, 0);
+  const prevMonthTotal = full.filter((r) => toMonthStr(r.payment_date) === prevMonth).reduce((a, r) => a + r.amount, 0);
   const growthPct = prevMonthTotal ? ((monthTotal - prevMonthTotal) / prevMonthTotal) * 100 : 0;
   const dayGrowthPct = yestAmt ? ((todayAmt - yestAmt) / yestAmt) * 100 : 0;
 
   return {
     total_collection: total, today_collection: todayAmt, yesterday_collection: yestAmt,
+    yesterday_date: prevActiveDate ? toISODate(prevActiveDate) : null,
     average_daily_collection: avgDaily,
     highest_collection_day: highest, lowest_collection_day: lowest,
     month_collection: monthTotal, collection_growth_pct: growthPct, day_growth_pct: dayGrowthPct,
@@ -1489,13 +1493,13 @@ function renderKpis() {
 
   const cards = [
     { label: "Total Collection", value: fmtMoney(d.total_collection), sub: `${d.transaction_count} transactions`, accent: "cyan" },
-    { label: "Today's Collection", value: fmtMoney(d.today_collection), sub: fmtPct(d.day_growth_pct) + " vs yesterday", accent: "green", subClass: d.day_growth_pct >= 0 ? "positive" : "negative" },
-    { label: "Yesterday's Collection", value: fmtMoney(d.yesterday_collection), sub: "Prior day total", accent: "violet" },
+    { label: "Today's Collection", value: fmtMoney(d.today_collection), sub: (d.day_growth_pct >= 0 ? "+" : "") + fmtPct(d.day_growth_pct) + " vs prior active day", accent: "green", subClass: d.day_growth_pct >= 0 ? "positive" : "negative" },
+    { label: "Yesterday's Collection", value: fmtMoney(d.yesterday_collection), sub: d.yesterday_date ? "Prior active day (" + d.yesterday_date + ")" : "Prior day total", accent: "violet" },
     { label: "Average Daily Collection", value: fmtMoney(d.average_daily_collection), sub: "Across active days", accent: "amber" },
     { label: "Highest Collection Day", value: fmtMoney(d.highest_collection_day.amount), sub: d.highest_collection_day.date || "—", accent: "green" },
     { label: "Lowest Collection Day", value: fmtMoney(d.lowest_collection_day.amount), sub: d.lowest_collection_day.date || "—", accent: "rose" },
     { label: "This Month's Collection", value: fmtMoney(d.month_collection), sub: "Reference: " + d.reference_date, accent: "cyan" },
-    { label: "Collection Growth %", value: fmtPct(d.collection_growth_pct), sub: "Month-over-month", accent: d.collection_growth_pct >= 0 ? "green" : "rose", subClass: d.collection_growth_pct >= 0 ? "positive" : "negative" },
+    { label: "Collection Growth %", value: (d.collection_growth_pct >= 0 ? "+" : "") + fmtPct(d.collection_growth_pct), sub: "Month-over-month", accent: d.collection_growth_pct >= 0 ? "green" : "rose", subClass: d.collection_growth_pct >= 0 ? "positive" : "negative" },
   ];
 
   const accentMap = {
